@@ -12,10 +12,6 @@ import Summary from './views/Summary';
 import './App.css';
 
 
-//const calculateMinimum = require('./Utils/mathCalcs');
-
-
-
 class App extends Component {
 
 
