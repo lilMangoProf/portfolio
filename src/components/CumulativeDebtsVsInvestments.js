@@ -14,40 +14,148 @@ class CumulativeDebtsVsInvestmentsChart extends Component {
 		localStorage.setItem('loans',JSON.stringify(loansArr));
 		*/
 		super(props);
-		
-		this.state = {
-			maxMonths:this.calculateLongestRunningDebtMonths(this.props.loansArr)
-		};		
+			
 	}
 
+	getRandomInvestRate() {
+		/*
+		 * Lower tail quantile for standard normal distribution function.
+		 *
+		 * This function returns an approximation of the inverse cumulative
+		 * standard normal distribution function.  I.e., given P, it returns
+		 * an approximation to the X satisfying P = Pr{Z <= X} where Z is a
+		 * random variable from the standard normal distribution.
+		 *
+		 * The algorithm uses a minimax approximation by rational functions
+		 * and the result has a relative error whose absolute value is less
+		 * than 1.15e-9.
+		 *
+		 * Author:      Peter John Acklam
+		 * E-mail:      jacklam@math.uio.no
+		 * WWW URL:     http://home.online.no/~pjacklam/notes/invnorm/
+		 *
+		 * Javascript implementation by Liorzou Etienne
+		 * - Adapted from Dr. Thomas Ziegler's C implementation itself adapted from Peter's Perl version
+		 * 
+		 * Q: What about copyright?
+		 * A: You can use the algorithm for whatever purpose you want, but 
+		 * please show common courtesy and give credit where credit is due.
+		 * 
+		 * If you have any reclamation about this file (ie: normal.inverse.js file),
+		 * please contact me.
+		 * 
+		 */
+
+		/* Coefficients in rational approximations. */
+		let a =
+		[
+			-3.969683028665376e+01,
+			 2.209460984245205e+02,
+			-2.759285104469687e+02,
+			 1.383577518672690e+02,
+			-3.066479806614716e+01,
+			 2.506628277459239e+00
+		];
+
+		let b =
+		[
+			-5.447609879822406e+01,
+			 1.615858368580409e+02,
+			-1.556989798598866e+02,
+			 6.680131188771972e+01,
+			-1.328068155288572e+01
+		];
+
+		let c =
+		[
+			-7.784894002430293e-03,
+			-3.223964580411365e-01,
+			-2.400758277161838e+00,
+			-2.549732539343734e+00,
+			 4.374664141464968e+00,
+			 2.938163982698783e+00
+		];
+
+		let d =
+		[
+			7.784695709041462e-03,
+			3.224671290700398e-01,
+			2.445134137142996e+00,
+			3.754408661907416e+00
+		];
+
+		let LOW = 0.02425;
+		let HIGH = 0.97575;
+
+
+		let ltqnorm = function (p) {
+			let q, r;
+
+			// errno = 0;
+
+			if (p < 0 || p > 1)
+			{
+				// errno = EDOM;
+				return 0.0;
+			}
+			else if (p === 0)
+			{
+				// errno = ERANGE;
+				return Number.NEGATIVE_INFINITY; /* minus "infinity" */;
+			}
+			else if (p === 1)
+			{
+				// errno = ERANGE;
+				return Number.POSITIVE_INFINITY; /* "infinity" */;
+			}
+			else if (p < LOW)
+			{
+				/* Rational approximation for lower region */
+				q = Math.sqrt(-2*Math.log(p));
+				return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) /
+					((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+			}
+			else if (p > HIGH)
+			{
+				/* Rational approximation for upper region */
+				q  = Math.sqrt(-2*Math.log(1-p));
+				return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) /
+					((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1);
+			}
+			else
+			{
+				/* Rational approximation for central region */
+		    		q = p - 0.5;
+		    		r = q*q;
+				return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q /
+					(((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
+			}
+		}
+		const MEAN = 7.0;
+		const STD_DEV = 6.0;
+		return ltqnorm(Math.random())*STD_DEV+MEAN;		
+	}
 	/**
 	* Selects the debt with lengthiest interval to CAP the investment growth (and compare under equal length of time)
 	*/
-	calculateLongestRunningDebtMonths(loansArr) {
+	calculateLongestRunningDebtMonths(loan) {
 		
-		let max=0;
-
-		for(let i=0;i<loansArr.length;i++) {
-			let APR = loansArr[i].APR / 100.0;
-	  		let principal = loansArr[i].principal;
-	  		let monthlyPayment = parseFloat(loansArr[i].monthlyPayment);
+		let APR = loan.APR / 100.0;
+  		let principal = loan.principal;
+  		let monthlyPayment = parseFloat(loan.monthlyPayment);
 
 
-			//Add extra monthly payment towards loan
-    		//TODO handle logic else where for roll over and to apply toward NEXT highest loan. 
-    		//NOTE this adds extra payments towards EACH individual loan!!
-    		if(this.props.payoffChoice === 'DEBT' && this.props.extra >0) {
-    			monthlyPayment = monthlyPayment + this.props.extra;
-    		}
+		//Add extra monthly payment towards loan
+		//TODO handle logic else where for roll over and to apply toward NEXT highest loan. 
+		//NOTE this adds extra payments towards EACH individual loan!!
+		if(this.props.payoffChoice === 'DEBT' && this.props.extra >0) {
+			monthlyPayment = monthlyPayment + this.props.extra;
+		}
 
-	  		//numPayments sorta helps prevent generating infinite amount of payment tables
-	  		let numPayments = -Math.log(1-(APR/12)*principal/monthlyPayment)/Math.log(1+APR/12.0)
-	  		if(numPayments>max){
-	  			max = numPayments;
-	  		}
-		}	
-		
-		return max;
+  		//numPayments sorta helps prevent generating infinite amount of payment tables
+  		let numPayments = -Math.log(1-(APR/12)*principal/monthlyPayment)/Math.log(1+APR/12.0)
+	
+		return numPayments;
 	}
 
 
@@ -55,6 +163,7 @@ class CumulativeDebtsVsInvestmentsChart extends Component {
 	generateLoanIntervals(loanDetail) {
 		
   		let loan = [];
+  		const NEGATIVE = -1;
 
   		let APR = parseFloat(loanDetail.APR) / 100.0;
   		let principal = parseFloat(loanDetail.principal);
@@ -80,9 +189,10 @@ class CumulativeDebtsVsInvestmentsChart extends Component {
 
     		tmp['x'] = new Date(year,month);
 
+    		    		
     		//calculate principal after a month of accrued interest, Y-axis will be amount just before payment
     		principal = principal * (1+ APR / 12.0);
-    		tmp['y'] = principal;
+    		tmp['y'] = NEGATIVE * principal;
 
     		loan.push(tmp);
 
@@ -125,7 +235,8 @@ class CumulativeDebtsVsInvestmentsChart extends Component {
   		//numPayments sorta helps prevent generating infinite amount of payment tables
   		//let numPayments = -Math.log(1-(APR/12)*principal/monthlyPayment)/Math.log(1+APR/12)
   		//TODO calculate MAX interval from longest debt? or allow user to set length??  		
-  		let numPayments = this.calculateLongestRunningDebtMonths(this.props.loansArr);//12 * 10; //12 months * 20 years
+  		let numPayments = this.calculateLongestRunningDebtMonths(this.props.loan);//12 * 10; //12 months * 20 years
+		//TODO ****
 
   		let year = (new Date()).getYear() + 1900;
   		let month = (new Date()).getMonth();
@@ -135,9 +246,11 @@ class CumulativeDebtsVsInvestmentsChart extends Component {
 
     		tmp['x'] = new Date(year,month);
 
-    		//calculate principal after a month of accrued interest, Y-axis will be amount just before payment
+
+			APR = this.getRandomInvestRate() / 100.0;
+			//calculate principal after a month of accrued interest, Y-axis will be amount just before payment
     		principal = principal * (1+ APR / 12.0);
-    		tmp['y'] = -1*principal;
+    		tmp['y'] = principal;
 
     		investIntervals.push(tmp);
 
@@ -159,31 +272,28 @@ class CumulativeDebtsVsInvestmentsChart extends Component {
   		return investIntervals;		
 	}
 
-	generateCanvasJSDataPoints(loansArr,investmentsArr){
+	generateCanvasJSDataPoints(loan,investment){
 	  
 		let canvasJSarr = [];
 
-	  	for(let i=0; i<loansArr.length;i++){
-	    	let tmp = {
-	      		type: "splineArea", 
-	      		showInLegend: true,
-	      		name: loansArr[i].name,
-	      		yValueFormatString: "$#,##0",     
-	      		dataPoints: this.generateLoanIntervals(loansArr[i])    
-	    	}
-	    	canvasJSarr.push(tmp);
-	  	}
+    	let tmp = {
+			type: "splineArea",
+			showInLegend: true,
+			name: 'Investment',
+	  		yValueFormatString: "$#,##0",     
+  			dataPoints: this.generateInvestmentIntervals(investment)  	  			
+		}
+		canvasJSarr.push(tmp);
 
-	  	for(let i=0;i<investmentsArr.length;i++){
-	  		let tmp = {
-	  			type: "splineArea",
-	  			showInLegend: true,
-	  			name: investmentsArr[i].name,
-	      		yValueFormatString: "$#,##0",     
-	      		dataPoints: this.generateInvestmentIntervals(investmentsArr[i])  	  			
-	  		}
-	  		canvasJSarr.push(tmp);
-	  	}
+		tmp = {
+      		type: "splineArea", 
+      		showInLegend: true,
+      		name: 'Debt',
+      		yValueFormatString: "$#,##0",     
+      		dataPoints: this.generateLoanIntervals(loan)    
+    	}
+    	canvasJSarr.push(tmp);	
+
 	  return canvasJSarr;
 	}	
 
@@ -207,7 +317,7 @@ class CumulativeDebtsVsInvestmentsChart extends Component {
 			legend: {
 				fontSize: 13
 			},
-			data: this.generateCanvasJSDataPoints(this.props.loansArr,this.props.investmentsArr)
+			data: this.generateCanvasJSDataPoints(this.props.loan,this.props.investment)
 		};
 		
 		return (

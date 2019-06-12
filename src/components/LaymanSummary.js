@@ -15,7 +15,7 @@ class LaymanSummary extends React.Component {
 				+ Number(parseInt(this.props.extra)) + ' per month'
 				+ ' extra toward debt, you will have paid ' 
 				+ '$'+ this.props.interestDebtPaid
-				+ ' in '
+				+ ' of interest in '
 				+ parseInt(this.props.timeLength) + ' months.';
 		} else if(this.props.payoffChoice ==='INVEST'){ //INVEST
 			msg = 'By contributing $'

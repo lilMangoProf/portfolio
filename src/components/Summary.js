@@ -12,7 +12,7 @@ class Summary extends React.Component {
 		super(props);				
 
 		this.state = {
-			maxMonths:this.calculateLongestRunningDebtMonths(this.props.loansArr)
+			maxMonths:this.calculateLongestRunningDebtMonths(this.props.loan)
 		};
 	}
 
@@ -21,13 +21,13 @@ class Summary extends React.Component {
 	* arg: APR, principal, monthlyPayment
 	* return: float
 	*/
-	calculateLoanAccruedInterest(argAPR, argPrincipal, argMonthlyPayment) {
+	calculateLoanAccruedInterest(loan) {
 
 		let totalPaidInterest = 0.0;
 
-  		let APR = parseFloat(argAPR) / 100.0;
-		let principal = parseFloat(argPrincipal);
-		let monthlyPayment = parseFloat(argMonthlyPayment);
+  		let APR = parseFloat(loan.APR) / 100.0;
+		let principal = parseFloat(loan.principal);
+		let monthlyPayment = parseFloat(loan.monthlyPayment);
 
 		//Add extra monthly payment towards paying off loans
 		//TODO handle logic else where for roll over and to apply toward NEXT highest loan. 
@@ -57,54 +57,30 @@ class Summary extends React.Component {
 		return totalPaidInterest;
 	}
 
-	/*
-	* Sum all the accumulated, monthly compounded interest paid for a list of loans
-	* arg: [loansDetail Array]
-	* return: float
-	*
-	*/
-	calculateAllLoansTotalInterest(loansArr) {
-		let totalPaidInterest = 0.0;
 
-		for(let i=0;i<loansArr.length;i++) {
-			
-			let loanDetail = loansArr[i];
-			
-  			totalPaidInterest = totalPaidInterest + this.calculateLoanAccruedInterest(loanDetail.APR, loanDetail.principal, loanDetail.monthlyPayment);			
-		}
-
-		return totalPaidInterest;
-	}		
-	
 
 
 	/*
 	* Get the longest running debt amount so we can get a CAP on the invest growth to compare to
 	* return integer
 	*/
-	calculateLongestRunningDebtMonths(loansArr) {
-		
-		let max=0;
+	calculateLongestRunningDebtMonths(loan) {
 
-		for(let i=0;i<loansArr.length;i++) {
-			let APR = loansArr[i].APR / 100.0;
-	  		let principal = loansArr[i].principal;
-	  		let monthlyPayment = parseFloat(loansArr[i].monthlyPayment);
-	  		
-			//Add extra monthly payment towards loan
-    		//TODO handle logic else where for roll over and to apply toward NEXT highest loan. 
-    		//NOTE this adds extra payments towards EACH individual loan!!
-    		if(this.props.payoffChoice === 'DEBT' && this.props.extra >0) {
-    			monthlyPayment = monthlyPayment + this.props.extra;
-    		}
+		let APR = loan.APR / 100.0;
+  		let principal = loan.principal;
+  		let monthlyPayment = parseFloat(loan.monthlyPayment);
+  		
+		//Add extra monthly payment towards loan
+		//TODO handle logic else where for roll over and to apply toward NEXT highest loan. 
+		//NOTE this adds extra payments towards EACH individual loan!!
+		if(this.props.payoffChoice === 'DEBT' && this.props.extra >0) {
+			monthlyPayment = monthlyPayment + this.props.extra;
+		}
 
-	  		//numPayments sorta helps prevent generating infinite amount of payment tables
-	  		let numPayments = -Math.log(1-(APR/12)*principal/monthlyPayment)/Math.log(1+APR/12)
-	  		if(numPayments>max){
-	  			max = numPayments;
-	  		}
-		}	
-		return max;
+  		//numPayments sorta helps prevent generating infinite amount of payment tables
+  		let numPayments = -Math.log(1-(APR/12)*principal/monthlyPayment)/Math.log(1+APR/12)
+
+		return numPayments;
 	}
 
 	/*
@@ -113,14 +89,14 @@ class Summary extends React.Component {
 	* arg: APR, principal, monthlyPayment
 	* return: float
 	*/
-	calculateInvestmentAccruedInterest(argAPR, argPrincipal, argMonthlyPayment) {
-
+	calculateInvestmentAccruedInterest(investment) {
+		
 		let totalInvestInterest = 0.0;
-		let MAX_MONTHS = this.calculateLongestRunningDebtMonths(this.props.loansArr);//this.state.maxMonths;
+		let MAX_MONTHS = this.calculateLongestRunningDebtMonths(this.props.loan);//this.state.maxMonths;
 
-  		let APR = parseFloat(argAPR) / 100.0;
-		let principal = parseFloat(argPrincipal);
-		let monthlyPayment = parseFloat(argMonthlyPayment);
+  		let APR = parseFloat(investment.APR) / 100.0;
+		let principal = parseFloat(investment.principal);
+		let monthlyPayment = parseFloat(investment.monthlyPayment);
 
 		//Add extra monthly payment towards investment
 		//TODO handle logic else where for roll over and to apply toward NEXT highest investment. 
@@ -146,23 +122,6 @@ class Summary extends React.Component {
 		return totalInvestInterest;
 	}
 
-	/*
-	* Sum all the accumulated, monthly compound interest earned for a list of Investments
-	* arg [investmentDetails Array]
-	* return float
-	*/
-	calculateAllInvestmentTotalInterest(investmentsArr) {
-		let totalInvestInterest = 0.0;
-
-		for(let i=0;i<investmentsArr.length;i++) {
-			
-			let investDetail = investmentsArr[i];
-			
-  			totalInvestInterest = totalInvestInterest + this.calculateInvestmentAccruedInterest(investDetail.APR, investDetail.principal, investDetail.monthlyPayment);			
-		}
-
-		return totalInvestInterest;
-	}
 
 	render() {
 
@@ -184,12 +143,12 @@ class Summary extends React.Component {
 					</div>
 					<div className="col-md-3 card ">
 						<span className="header">Interest Paid</span>
-						<span className="amount">${Number(parseInt(this.calculateAllLoansTotalInterest(this.props.loansArr))).toLocaleString('en')}</span>
+						<span className="amount">${Number(parseInt(this.calculateLoanAccruedInterest(this.props.loan))).toLocaleString('en')}</span>
 						<span className="message">Cost of loan</span>
 					</div>
 					<div className="col-md-3 card">
 						<span className="header">Interest Earned</span>
-						<span className="amount">${Number(parseInt(this.calculateAllInvestmentTotalInterest(this.props.investmentsArr))).toLocaleString('en')}</span>
+						<span className="amount">${Number(parseInt(this.calculateInvestmentAccruedInterest(this.props.investment))).toLocaleString('en')}</span>
 						<span className="message">Make money work 4 u</span>
 					</div>
 					<div className="col-md-3 card" style={hidden}>
@@ -201,9 +160,9 @@ class Summary extends React.Component {
 				<LaymanSummary
 					payoffChoice={this.props.payoffChoice}
 					extra={this.props.extra}
-					interestDebtPaid={Number(parseInt(this.calculateAllLoansTotalInterest(this.props.loansArr))).toLocaleString('en')}
-					interestInvestmentEarned={Number(parseInt(this.calculateAllInvestmentTotalInterest(this.props.investmentsArr))).toLocaleString('en')}
-					timeLength={this.calculateLongestRunningDebtMonths(this.props.loansArr)}
+					interestDebtPaid={Number(parseInt(this.calculateLoanAccruedInterest(this.props.loan))).toLocaleString('en')}
+					interestInvestmentEarned={Number(parseInt(this.calculateInvestmentAccruedInterest(this.props.investment))).toLocaleString('en')}
+					timeLength={this.calculateLongestRunningDebtMonths(this.props.loan)}
 					/>
 
 			</div>

@@ -1,55 +1,21 @@
 import React from 'react';
-import '../panel.css';
+import '../css/panel.css';
 
 class ExtraPaymentsPanel extends React.Component {
 
 
-	constructor(props) {
-		super(props);		
-	}
-
-	/*
-	* TODO. Calculates total minimum monthly payments from all debt payments, and investment contributions
-	*/
-	calculateMinimum () {
-		const arraySumFunc = (sum, curElem)=>sum + parseInt(curElem['monthlyPayment']);
-
-		let sum = this.props.loansArray.reduce(arraySumFunc,0);
-		sum = sum + this.props.investmentsArray.reduce(arraySumFunc,0);
-		return sum;
-	}
-
-
 	render() {
-		const hrHighlight= {
-
-			borderTop: '2px solid rgb(3, 169, 244)',
-		    borderImage: 'initial',
-		    boxSizing: 'content-box',
-		    margin: '0px',
-		    width: '100%',
-		    transform: 'scaleX(1)',
-		    transition: 'all 450ms cubic-bezier(0.23, 1, 0.32, 1) 0ms'
-		}
-
-
-
 
 		return (
 
 			<div id="extra-payments" className="panel-shadow">
 	          	<div className="panel-header">
-	                {"Monthly Payments"}
+	                {"Extra Monthly Payments"}
 	            </div>
 		
 				<div className="panel-content" id="loans-content-container">
 										
-					<div>
 
-						<div className="right-align">${Number(parseInt(this.calculateMinimum()))}</div>
-
-						<div className="sub-header">Minimum monthly</div>		
-					</div>
 					<div>
 						<div className="textbox-div">
 
@@ -62,8 +28,10 @@ class ExtraPaymentsPanel extends React.Component {
 								name="extra"
 								onChange={this.props.onChange}
 								value={(isNaN(this.props.extra))?0:this.props.extra}
-								placeholder="Extra $ per month"/>
-							<hr style={hrHighlight} />
+								placeholder="Extra $ per month"
+								className="input-text"
+								/>
+							<hr className="input-hr" />
 						</div>
 
 					</div>
