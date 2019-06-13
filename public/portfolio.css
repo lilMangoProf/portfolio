@@ -13,10 +13,11 @@
 }
 
 .centered-description {
-	margin:50px auto; 
+	margin:20px auto; 
 	padding:30px 60px;
+  padding-left:150px;
 }
 .centered-photo {
-	margin:50px auto; 
+	margin:20px auto; 
 	padding:30px;	
 }
