@@ -3,9 +3,8 @@ import React, { Component } from 'react';
 import LoanControlPanel from './components/LoanControlPanel';
 import InvestmentsControlPanel from './components/InvestmentsControlPanel';
 import ExtraPaymentsPanel from './components/ExtraPaymentsPanel';
-import CumulativeDebtsVsInvestment from './components/CumulativeDebtsVsInvestments';
 
-import Summary from './components/Summary';
+import Results from './components/Results';
 
 import './App.css';
 
@@ -168,23 +167,15 @@ class App extends Component {
 						<InvestmentsControlPanel
 							investment={this.state.investment} 
 							onChange={((evt) => this.handleDataInputChange(evt))}
-							/>		
-
-					
+							/>							
 					</div>
 					<div className="col-md-9">
-						<Summary
-							loan={this.state.loan}
-							investment={this.state.investment}
+						<Results
+							loan = {this.state.loan}
+							investment = {this.state.investment}
 							extra = {this.state.extra}
-							payoffChoice = {this.state.payoffChoice}									
+							payoffChoice = {this.state.payoffChoice}	
 							/>
-						<CumulativeDebtsVsInvestment
-							loan={this.state.loan}
-							investment={this.state.investment}
-							payoffChoice={this.state.payoffChoice}
-							extra={this.state.extra}
-							/>	
 					</div>
 
 				</div>

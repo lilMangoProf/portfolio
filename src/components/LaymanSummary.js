@@ -9,7 +9,7 @@ class LaymanSummary extends React.Component {
 					timeLength
 
 	setupMessage() {
-		let msg = '';
+		let msg = 'Generally, it is recommended to payoff or invest in the debt or loan with the higher APR%';
 		if(this.props.payoffChoice==='DEBT') {
 			msg = 'By paying $' 
 				+ Number(parseInt(this.props.extra)) + ' per month'
@@ -30,7 +30,7 @@ class LaymanSummary extends React.Component {
 	}
 
 	setupMessage2() {
-		let msg = '';
+		let msg = 'Please note, there are also factors to consider like the actual investment rate, the tax deductions and other factors. Just straight number growth in a vacuum.' ;
 		if(this.props.payoffChoice==='DEBT') {
 			msg = 'In the same time frame, you will have earned '
 				+ '$' + this.props.interestInvestmentEarned

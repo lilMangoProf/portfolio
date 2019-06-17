@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import CanvasJSReact from '../lib/canvasjs.react';
 var CanvasJSChart = CanvasJSReact.CanvasJSChart;
  
-class CumulativeDebtsVsInvestmentsChart extends Component {
+class InterestDebtVsInvestment extends Component {
 
 	constructor(props) {
 		/*
@@ -170,6 +170,7 @@ class CumulativeDebtsVsInvestmentsChart extends Component {
   		let monthlyPayment = parseFloat(loanDetail.monthlyPayment);
   		//console.log('APR:',APR,' principal:',principal,' monthlyPayment', monthlyPayment)
 
+  		let accruedInterest = 0.0;
 		//Add extra monthly payment towards loan
 		//TODO handle logic else where for roll over and to apply toward NEXT highest loan. 
 		//**** NOTE this adds extra payments towards EACH individual loan!! ******
@@ -190,14 +191,15 @@ class CumulativeDebtsVsInvestmentsChart extends Component {
     		tmp['x'] = new Date(year,month);
 
     		//calculate principal after a month of accrued interest, Y-axis will be amount just before payment
-    		principal = principal * (1+ APR / 12.0);
-    		tmp['y'] = NEGATIVE * principal;
+    		let accrued =  principal * (1+ APR / 12.0);
+    		accruedInterest = accruedInterest + (accrued-principal);
+    		tmp['y'] = NEGATIVE * (accruedInterest);
 
     		loan.push(tmp);
 
     		//setup for net iteration
     		//apply payment for next iteration
-    		principal = principal - monthlyPayment;
+    		principal = accrued - monthlyPayment;
 
     		month = month + 1
 
@@ -222,7 +224,7 @@ class CumulativeDebtsVsInvestmentsChart extends Component {
   		let principal = parseFloat(investDetail.principal);
   		let monthlyPayment = parseFloat(investDetail.monthlyPayment);
   		//console.log('APR:',APR,' principal:',principal,' monthlyPayment', monthlyPayment)
-  		
+  		let accruedInterest = 0.0;
 
 		//Add extra monthly payment towards investment
 		//TODO handle logic else where for roll over and to apply toward NEXT highest investment. 
@@ -245,17 +247,19 @@ class CumulativeDebtsVsInvestmentsChart extends Component {
 
     		tmp['x'] = new Date(year,month);
 
-    		APR = this.getRandomInvestRate() / 100.0;
+    		//APR = this.getRandomInvestRate() / 100.0;
     		
     		//calculate principal after a month of accrued interest, Y-axis will be amount just before payment
-    		principal = principal * (1+ APR / 12.0);
-    		tmp['y'] = principal;
+    		let accrued = principal * (1+ APR / 12.0);
+    		accruedInterest = accruedInterest + (accrued-principal);
+
+    		tmp['y'] = accruedInterest;
 
     		investIntervals.push(tmp);
 
     		//setup for net iteration
     		//apply payment for next iteration
-    		principal = principal + monthlyPayment;
+    		principal = accrued + monthlyPayment;
     		
     		month = month + 1
 
@@ -301,7 +305,7 @@ class CumulativeDebtsVsInvestmentsChart extends Component {
 			theme: "light2",
 			animationEnabled: true,
 			title: {
-				text: "Cumulative Debts & Investment"
+				text: "Interest Debt Paid vs Interest Investment Earned"
 			},
 			subtitles: [{
 				text: ""
@@ -330,4 +334,4 @@ class CumulativeDebtsVsInvestmentsChart extends Component {
 	}
 }
 
-export default CumulativeDebtsVsInvestmentsChart;
+export default InterestDebtVsInvestment;

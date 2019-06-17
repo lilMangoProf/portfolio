@@ -45,3 +45,25 @@
     display: block;
     text-align: center;	
 }
+
+.graph-nav {
+    width:100%;
+    bottom:-20px;
+    position:relative;
+}
+
+.graph-nav button{
+    width:25%;
+    height:50px;
+    background-color:rgb(3, 169, 244,0.7);
+    color:white;
+    font-size:16px;
+    text-transform: uppercase;
+    border-bottom: 2px hidden;
+    border-bottom: 2px solid rgb(3, 169, 244,0.0);
+}
+
+.graph-nav button.selected{
+    font-weight:700;
+    border-bottom: 2px solid red;
+}
