@@ -30,7 +30,7 @@ class LaymanSummary extends React.Component {
 	}
 
 	setupMessage2() {
-		let msg = 'Please note, there are also factors to consider like the actual investment rate, the tax deductions and other factors. Just straight number growth in a vacuum.' ;
+		let msg = 'Please note, there are also factors to consider like the actual investment rate, the tax deductions and other factors. This demonstrates the investment growth and debt decrease in a vacuum.' ;
 		if(this.props.payoffChoice==='DEBT') {
 			msg = 'In the same time frame, you will have earned '
 				+ '$' + this.props.interestInvestmentEarned
@@ -47,7 +47,7 @@ class LaymanSummary extends React.Component {
 
 		return (
 			<div className="row layman-summary" >
-				<h3>But what does this mean?</h3>
+				<h3>Where should I put my next dollar?</h3>
 				<p>{this.setupMessage()}</p>
 
 				<p>{this.setupMessage2()}</p>

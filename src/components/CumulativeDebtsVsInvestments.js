@@ -301,7 +301,7 @@ class CumulativeDebtsVsInvestmentsChart extends Component {
 			theme: "light2",
 			animationEnabled: true,
 			title: {
-				text: "Cumulative Debts & Investment"
+				text: "Balance: Debts & Investment"
 			},
 			subtitles: [{
 				text: ""
