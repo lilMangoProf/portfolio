@@ -49,7 +49,6 @@ class App extends Component {
                     <div className="header-bar">
                         <span className="header-menu">
 
-                           <a href="/portfolio.html" target="_blank">Portfolio</a>
                         </span>
                         <h1 className="header-title">Payoff or Invest</h1>
                 </div>
