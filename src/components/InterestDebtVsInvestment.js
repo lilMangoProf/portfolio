@@ -216,7 +216,8 @@ class InterestDebtVsInvestment extends Component {
 	}
 
 	//investDetail => {name:,APR:,principal:,monthlyPayment}
-	generateInvestmentIntervals(investDetail) {
+	//loanDetail => {name:,APR:,principal:,monthlyPayment}
+	generateInvestmentIntervals(investDetail,loanDetail) {
 
   		let investIntervals = [];
 
@@ -227,17 +228,13 @@ class InterestDebtVsInvestment extends Component {
   		let accruedInterest = 0.0;
 
 		//Add extra monthly payment towards investment
-		//TODO handle logic else where for roll over and to apply toward NEXT highest investment. 
-		//NOTE this adds extra payments towards EACH individual investment!!
 		if(this.props.payoffChoice === 'INVEST' && this.props.extra >0) {
 			monthlyPayment = monthlyPayment + this.props.extra;
 		}
+  				
+  		let numPayments = this.props.calculateLongestRunningDebtMonths(loanDetail,null, 0);//12 * 10; //12 months * 20 years
+  		let DEBT_MONTHS = this.props.calculateLongestRunningDebtMonths(loanDetail, this.props.payoffChoice, this.props.extra);
 
-  		//numPayments sorta helps prevent generating infinite amount of payment tables
-  		//let numPayments = -Math.log(1-(APR/12)*principal/monthlyPayment)/Math.log(1+APR/12)
-  		//TODO calculate MAX interval from longest debt? or allow user to set length??  		
-  		let numPayments = this.calculateLongestRunningDebtMonths(this.props.loan);//12 * 10; //12 months * 20 years
-		//TODO ****
 
   		let year = (new Date()).getYear() + 1900;
   		let month = (new Date()).getMonth();
@@ -260,7 +257,14 @@ class InterestDebtVsInvestment extends Component {
     		//setup for net iteration
     		//apply payment for next iteration
     		principal = accrued + monthlyPayment;
-    		
+    	
+    		//reinvest loan contribution if finished paying debt off until original loan length
+			if(this.props.doReinvest ===true 
+				&& this.props.payoffChoice === 'DEBT'
+				&& i>DEBT_MONTHS ) {
+    			principal = principal + parseFloat(loanDetail.monthlyPayment);
+    		}    		
+
     		month = month + 1
 
     		if (month>11) {
@@ -284,7 +288,7 @@ class InterestDebtVsInvestment extends Component {
 			showInLegend: true,
 			name: 'Investment',
 	  		yValueFormatString: "$#,##0",     
-  			dataPoints: this.generateInvestmentIntervals(investment)  	  			
+  			dataPoints: this.generateInvestmentIntervals(investment,loan)  	  			
 		}
 		canvasJSarr.push(tmp);
 

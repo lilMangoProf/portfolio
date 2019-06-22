@@ -135,28 +135,7 @@ class CumulativeDebtsVsInvestmentsChart extends Component {
 		const STD_DEV = 6.0;
 		return ltqnorm(Math.random())*STD_DEV+MEAN;		
 	}
-	/**
-	* Selects the debt with lengthiest interval to CAP the investment growth (and compare under equal length of time)
-	*/
-	calculateLongestRunningDebtMonths(loan) {
-		
-		let APR = loan.APR / 100.0;
-  		let principal = loan.principal;
-  		let monthlyPayment = parseFloat(loan.monthlyPayment);
 
-
-		//Add extra monthly payment towards loan
-		//TODO handle logic else where for roll over and to apply toward NEXT highest loan. 
-		//NOTE this adds extra payments towards EACH individual loan!!
-		if(this.props.payoffChoice === 'DEBT' && this.props.extra >0) {
-			monthlyPayment = monthlyPayment + this.props.extra;
-		}
-
-  		//numPayments sorta helps prevent generating infinite amount of payment tables
-  		let numPayments = -Math.log(1-(APR/12)*principal/monthlyPayment)/Math.log(1+APR/12.0)
-	
-		return numPayments;
-	}
 
 
 	//loanDetail => {name:,APR:,principal:,monthlyPayment}
@@ -212,30 +191,32 @@ class CumulativeDebtsVsInvestmentsChart extends Component {
 		//    { x: new Date(2016, 3), y: 2600 },]
   		return loan;		
 	}
+	
+	/*
+	* Compounding till the longest running debt is finished.
+	* Then will also rollover the debt payments to the investment if the debts are paid off earlier.
+	* so we can keep fair comparison of same time length, and amount of contributions
 
-	//investDetail => {name:,APR:,principal:,monthlyPayment}
-	generateInvestmentIntervals(investDetail) {
+	investDetail => {name:,APR:,principal:,monthlyPayment}
+	loanDetail => {name:,APR:,principal:,monthlyPayment}
+	*/
+	generateInvestmentIntervals(investDetail, loanDetail) {
 
   		let investIntervals = [];
 
   		let APR = parseFloat(investDetail.APR) / 100.0;
   		let principal = parseFloat(investDetail.principal);
   		let monthlyPayment = parseFloat(investDetail.monthlyPayment);
-  		//console.log('APR:',APR,' principal:',principal,' monthlyPayment', monthlyPayment)
   		
-
 		//Add extra monthly payment towards investment
 		//TODO handle logic else where for roll over and to apply toward NEXT highest investment. 
 		//NOTE this adds extra payments towards EACH individual investment!!
 		if(this.props.payoffChoice === 'INVEST' && this.props.extra >0) {
 			monthlyPayment = monthlyPayment + this.props.extra;
 		}
-
-  		//numPayments sorta helps prevent generating infinite amount of payment tables
-  		//let numPayments = -Math.log(1-(APR/12)*principal/monthlyPayment)/Math.log(1+APR/12)
-  		//TODO calculate MAX interval from longest debt? or allow user to set length??  		
-  		let numPayments = this.calculateLongestRunningDebtMonths(this.props.loan);//12 * 10; //12 months * 20 years
-		//TODO ****
+	
+  		let numPayments = this.props.calculateLongestRunningDebtMonths(loanDetail,null, 0);//12 * 10; //12 months * 20 years
+  		let DEBT_MONTHS = this.props.calculateLongestRunningDebtMonths(loanDetail, this.props.payoffChoice, this.props.extra);
 
   		let year = (new Date()).getYear() + 1900;
   		let month = (new Date()).getMonth();
@@ -245,7 +226,7 @@ class CumulativeDebtsVsInvestmentsChart extends Component {
 
     		tmp['x'] = new Date(year,month);
 
-    		APR = this.getRandomInvestRate() / 100.0;
+    		//APR = this.getRandomInvestRate() / 100.0;
     		
     		//calculate principal after a month of accrued interest, Y-axis will be amount just before payment
     		principal = principal * (1+ APR / 12.0);
@@ -256,7 +237,14 @@ class CumulativeDebtsVsInvestmentsChart extends Component {
     		//setup for net iteration
     		//apply payment for next iteration
     		principal = principal + monthlyPayment;
-    		
+
+    		//reinvest loan contribution if finished paying debt off and continue those contributions until original loan length
+			if(this.props.doReinvest ===true 
+				&& this.props.payoffChoice === 'DEBT'
+				&& i>DEBT_MONTHS ) {
+    			principal = principal + parseFloat(loanDetail.monthlyPayment);
+    		}
+
     		month = month + 1
 
     		if (month>11) {
@@ -280,7 +268,7 @@ class CumulativeDebtsVsInvestmentsChart extends Component {
 			showInLegend: true,
 			name: 'Investment',
 	  		yValueFormatString: "$#,##0",     
-  			dataPoints: this.generateInvestmentIntervals(investment)  	  			
+  			dataPoints: this.generateInvestmentIntervals(investment,loan)  	  			
 		}
 		canvasJSarr.push(tmp);
 

@@ -38,7 +38,7 @@ class ExtraPaymentsPanel extends React.Component {
 					<div>
 						<div>
 							<div className="sub-header" style={{marginTop:'40px'}}>Pay toward:</div>
-							<div style={{width:'100%'}}>
+							<span style={{width:'50%'}}>
 								<input type="radio" 
 									name="pay-toward"
 									value="DEBT"
@@ -47,8 +47,18 @@ class ExtraPaymentsPanel extends React.Component {
 									checked={this.props.payoffChoice==='DEBT'}
 									/>
 								<label>Payoffing debt</label>
-							</div>
-							<div style={{width:'100%'}}>	
+							</span>
+							<span style={{width:'50%'}}>	
+								<input type="checkbox" 
+									name="reinvest-loan"
+									style={{marginRight:'10px'}}
+									onChange={this.props.onChange}
+									checked={this.props.doReinvest===true}
+									disabled={this.props.payoffChoice!=='DEBT'}
+									/>
+								<label>Reinvest loan payments</label>
+							</span>								
+							<div style={{width:'50%'}}>	
 								<input type="radio" 
 									name="pay-toward"
 									value="INVEST"
@@ -58,6 +68,7 @@ class ExtraPaymentsPanel extends React.Component {
 									/>
 								<label>Investing more</label>
 							</div>	
+							
 						</div>
 						
 					</div>					

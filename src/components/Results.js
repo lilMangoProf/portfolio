@@ -20,7 +20,7 @@ class Results extends React.Component {
 	* arg: APR, principal, monthlyPayment
 	* return: float
 	*/
-	calculateLoanAccruedInterest(loan) {
+	calculateLoanAccruedInterest(loan, payoffChoice, extra) {
 
 		let totalPaidInterest = 0.0;
 
@@ -31,9 +31,9 @@ class Results extends React.Component {
 		//Add extra monthly payment towards paying off loans
 		//TODO handle logic else where for roll over and to apply toward NEXT highest loan. 
 		//NOTE this adds extra payments towards EACH individual loan!!
-		if(this.props.payoffChoice === 'DEBT' && this.props.extra >0) {
+		if(payoffChoice === 'DEBT' && extra >0) {
 
-			monthlyPayment = monthlyPayment +	this.props.extra;
+			monthlyPayment = monthlyPayment +	extra;
 			console.log('more loan!: monthly=',monthlyPayment);
 		}
 
@@ -65,7 +65,7 @@ class Results extends React.Component {
 	* Get the longest running debt amount so we can get a CAP on the invest growth to compare to
 	* return integer
 	*/
-	calculateLongestRunningDebtMonths(loan) {
+	calculateLongestRunningDebtMonths(loan, payoffChoice, extra) {
 
 		let APR = loan.APR / 100.0;
   		let principal = loan.principal;
@@ -74,8 +74,8 @@ class Results extends React.Component {
 		//Add extra monthly payment towards loan
 		//TODO handle logic else where for roll over and to apply toward NEXT highest loan. 
 		//NOTE this adds extra payments towards EACH individual loan!!
-		if(this.props.payoffChoice === 'DEBT' && this.props.extra >0) {
-			monthlyPayment = monthlyPayment + this.props.extra;
+		if(payoffChoice === 'DEBT' && extra >0) {
+			monthlyPayment = monthlyPayment + extra;
 		}
 
   		//numPayments sorta helps prevent generating infinite amount of payment tables
@@ -87,29 +87,29 @@ class Results extends React.Component {
 	/*
 	* Sum all the monthly compound interest earned  on a single investment.
 	* Compounding till the longest running debt is finished.
-	* arg: APR, principal, monthlyPayment
+	* Then will also rollover the debt payments to the investment if the debts are paid off earlier.
+	* so we can keep fair comparison of same time length, and amount of contributions
+	* arg: investment{APR, principal, monthlyPayment} , payoffChoice (DEBT|INVEST), extra monthly, loan{APR, principal, monthlyPayment}
 	* return: float
 	*/
-	calculateInvestmentAccruedInterest(investment) {
+	calculateInvestmentAccruedInterest(investment, payoffChoice, extra,loan) {
 		
 		let totalInvestInterest = 0.0;
-		let MAX_MONTHS = this.calculateLongestRunningDebtMonths(this.props.loan);
+		let MAX_MONTHS = this.calculateLongestRunningDebtMonths(loan, null, 0);
+		let DEBT_MONTHS = this.calculateLongestRunningDebtMonths(loan, payoffChoice, extra);
 
   		let APR = parseFloat(investment.APR) / 100.0;
 		let principal = parseFloat(investment.principal);
 		let monthlyPayment = parseFloat(investment.monthlyPayment);
 
-		//Add extra monthly payment towards investment
-		//TODO handle logic else where for roll over and to apply toward NEXT highest investment. 
-		//NOTE this adds extra payments towards EACH individual investment!!
-		if(this.props.payoffChoice === 'INVEST' && this.props.extra >0) {
+		if(payoffChoice === 'INVEST' && extra >0) {
 			console.log('more invest!');
-			monthlyPayment = monthlyPayment + this.props.extra;
+			monthlyPayment = monthlyPayment + extra;
 			console.log('more invest! monthly=',monthlyPayment);
 		}
 
 		//calculate monthly compounded interest for eacch investment, 
-		//compounding till the longest running debt is finished
+		//compounding till the original running debt is finished
 		for (let j=0; j < MAX_MONTHS; j++){
 			let accrued = principal * (1+ APR / 12.0);
 			
@@ -120,6 +120,14 @@ class Results extends React.Component {
 
 			//continue calcing through the investment, adding the monthly contribution
 			principal = accrued + monthlyPayment;
+
+			//reinvest loan contribution if finished paying debt off 
+			//and continue those contributions until original loan length
+			if(this.props.doReinvest ===true 
+				&& payoffChoice === 'DEBT'
+				&& j>DEBT_MONTHS ) {
+				principal = principal + parseFloat(loan.monthlyPayment);
+			}
 		}
 
 		return totalInvestInterest;
@@ -130,17 +138,15 @@ class Results extends React.Component {
 	* arg: APR, principal, monthlyPayment
 	* return: float
 	*/
-	calculateLoanCumulative(loan) {
+	calculateLoanCumulative(loan, payoffChoice, extra) {
 
   		let APR = parseFloat(loan.APR) / 100.0;
 		let principal = parseFloat(loan.principal);
 		let monthlyPayment = parseFloat(loan.monthlyPayment);
 
 		//Add extra monthly payment towards paying off loans
-		//TODO handle logic else where for roll over and to apply toward NEXT highest loan. 
-		//NOTE this adds extra payments towards EACH individual loan!!
-		if(this.props.payoffChoice === 'DEBT' && this.props.extra >0) {
-			monthlyPayment = monthlyPayment +	this.props.extra;
+		if(payoffChoice === 'DEBT' && extra >0) {
+			monthlyPayment = monthlyPayment + extra;
 		}
 
   		//numPayments sorta helps prevent generating infinite amount of payment tables
@@ -151,15 +157,15 @@ class Results extends React.Component {
 
 	/*
 	* Sum the total value of investment, including interest and contributions
-	* arg: APR, principal, monthlyPayment
+	* arg: investment{APR, principal, monthlyPayment}, payoffChoice (DEBT|INVEST), extra monthly payment, loan{APR, principal, monthlyPayment}
 	* return: float
-	* arg: APR, principal, monthlyPayment
-	* return: float
+	
 	*/
-	calculateInvestmentCumulative(investment) {
+	calculateInvestmentCumulative(investment, payoffChoice, extra, loan) {
 		
-		let MAX_MONTHS = this.calculateLongestRunningDebtMonths(this.props.loan);
-
+		let MAX_MONTHS = this.calculateLongestRunningDebtMonths( loan,  null,0);
+		let DEBT_MONTHS = this.calculateLongestRunningDebtMonths( loan, payoffChoice, extra);
+  		
   		let APR = parseFloat(investment.APR) / 100.0;
 		let principal = parseFloat(investment.principal);
 		let monthlyPayment = parseFloat(investment.monthlyPayment);
@@ -167,8 +173,8 @@ class Results extends React.Component {
 		//Add extra monthly payment towards investment
 		//TODO handle logic else where for roll over and to apply toward NEXT highest investment. 
 		//NOTE this adds extra payments towards EACH individual investment!!
-		if(this.props.payoffChoice === 'INVEST' && this.props.extra >0) {
-			monthlyPayment = monthlyPayment + this.props.extra;
+		if(payoffChoice === 'INVEST' && extra >0) {
+			monthlyPayment = monthlyPayment + extra;
 		}
 
 		//calculate monthly compounded interest for eacch investment, 
@@ -178,6 +184,14 @@ class Results extends React.Component {
 			
 			//continue calcing through the investment, adding the monthly contribution
 			principal = accrued + monthlyPayment;
+
+			//reinvest loan contribution if finished paying debt off 
+			//and continue those contributions until original loan length
+			if(this.props.doReinvest ===true 
+				&& payoffChoice === 'DEBT'
+				&& j>DEBT_MONTHS ) {
+				principal = principal + parseFloat( loan.monthlyPayment);
+			}
 		}
 
 		return principal;
@@ -187,10 +201,10 @@ class Results extends React.Component {
 
 		let res = {
 			cumulativeMode: this.state.cumulativeMode,
-			totalPaidInterest: this.calculateLoanAccruedInterest(this.props.loan),
-			totalInvestInterest: this.calculateInvestmentAccruedInterest(this.props.investment),
-			totalLoan: this.calculateLoanCumulative(this.props.loan),
-			totalInvestment: this.calculateInvestmentCumulative(this.props.investment),
+			totalPaidInterest: this.calculateLoanAccruedInterest(this.props.loan, this.props.payoffChoice, this.props.extra),
+			totalInvestInterest: this.calculateInvestmentAccruedInterest(this.props.investment, this.props.payoffChoice, this.props.extra, this.props.loan),
+			totalLoan: this.calculateLoanCumulative(this.props.loan, this.props.payoffChoice, this.props.extra),
+			totalInvestment: this.calculateInvestmentCumulative(this.props.investment, this.props.payoffChoice, this.props.extra, this.props.loan)
 		};	
 
 		if (this.state.cumulativeMode ===false && mode===1) {//previous state was interest mode, and clicked mode = 1 (cumulative)
@@ -216,6 +230,8 @@ class Results extends React.Component {
 					investment={this.props.investment}
 					payoffChoice={this.props.payoffChoice}
 					extra={this.props.extra}
+					calculateLongestRunningDebtMonths={this.calculateLongestRunningDebtMonths}
+					doReinvest = {this.props.doReinvest}
 					/>
 				);
 		} else {
@@ -225,6 +241,8 @@ class Results extends React.Component {
 					investment={this.props.investment}
 					payoffChoice={this.props.payoffChoice}
 					extra={this.props.extra}
+					calculateLongestRunningDebtMonths={this.calculateLongestRunningDebtMonths}
+					doReinvest = {this.props.doReinvest}
 					/>
 				);
 		}
@@ -236,13 +254,14 @@ class Results extends React.Component {
 			<div>
 				<Summary
 					cumulativeMode= {this.state.cumulativeMode}
-					totalPaidInterest= {this.calculateLoanAccruedInterest(this.props.loan)}
-					totalInvestInterest= {this.calculateInvestmentAccruedInterest(this.props.investment)}
-					totalLoan= {this.calculateLoanCumulative(this.props.loan)}					
-					totalInvestment= {this.calculateInvestmentCumulative(this.props.investment)}
+					totalPaidInterest= {this.calculateLoanAccruedInterest(this.props.loan, this.props.payoffChoice, this.props.extra )}
+					totalInvestInterest= {this.calculateInvestmentAccruedInterest(this.props.investment,this.props.payoffChoice, this.props.extra, this.props.loan)}
+					totalLoan= {this.calculateLoanCumulative(this.props.loan, this.props.payoffChoice, this.props.extra)}					
+					totalInvestment= {this.calculateInvestmentCumulative(this.props.investment, this.props.payoffChoice, this.props.extra, this.props.loan)}
 					extra = {this.props.extra}
 					payoffChoice = {this.props.payoffChoice}	
-					timeLength = {this.calculateLongestRunningDebtMonths(this.props.loan)}
+					timeLength = {this.calculateLongestRunningDebtMonths(this.props.loan,null, 0)}
+					doReinvest = {this.props.doReinvest}
 					/>
 					<div className="graph-nav">
 						<button onClick={()=>this.toggleGraphMode(0)}

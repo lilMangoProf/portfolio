@@ -32,15 +32,16 @@ class App extends Component {
 
 		super(props);				
 
-		let loan = {'principal':90000, 'APR':4.58, 'monthlyPayment':1000.0};
-		let investment = {'principal':500, 'APR':7.6, 'monthlyPayment':500.0};
+		let loan = {'principal':100000, 'APR':4.23, 'monthlyPayment':1023.0};
+		let investment = {'principal':500, 'APR':6.1, 'monthlyPayment':500.0};
 
 		this.state = {
 				loan:loan,
 				investment:investment,
 				extra:0,
 				editMode:'loan',
-				payoffChoice:'LOAN'
+				payoffChoice:'LOAN',
+				doReinvest:true
 		};
 	}
 
@@ -49,6 +50,7 @@ class App extends Component {
                     <div className="header-bar">
                         <span className="header-menu">
 
+                           
                         </span>
                         <h1 className="header-title">Payoff or Invest</h1>
                 </div>
@@ -93,7 +95,8 @@ class App extends Component {
 			investment:this.state.investment,				
 			extra:this.state.extra,
 			editMode:this.state.editMode,
-			payoffChoice:this.state.payoffChoice
+			payoffChoice:this.state.payoffChoice,
+			doReinvest:this.state.doReinvest
 		};
 
 		if (type==='text') {
@@ -117,7 +120,7 @@ class App extends Component {
 	}
 
 
-	//Handles radio selection for debt/invest choice, and text box for extra payments
+	//Handles radio selection for debt/invest choice, and text box for extra payments, checkbox for reinvest debt
 	handleExtraPaymentInputChange(event){
 
 		const target = event.target;
@@ -127,19 +130,24 @@ class App extends Component {
 		console.log('type=',target.type,' |',name, ': ', value);		
 
 		let extra = this.state.extra;
-		let payoffChoice = this.state.paymentChoice;
+		let payoffChoice = this.state.payoffChoice;
+		let doReinvest = this.state.doReinvest;
 
 		if (type==='text') {
 			extra=parseFloat(value);
 		} else if (type==='radio'){
 			payoffChoice = (value==='DEBT')?'DEBT':'INVEST';
 		}
+		if (type=== 'checkbox') {			
+			doReinvest=value;			
+		}
 		let res = {
 			loan:this.state.loan,
 			investment:this.state.investment,				
 			extra:extra,
 			editMode:this.state.editMode,
-			payoffChoice:payoffChoice
+			payoffChoice:payoffChoice,
+			doReinvest:doReinvest
 		};
 		
 		this.setState(res); 
@@ -158,6 +166,7 @@ class App extends Component {
 							extra = {this.state.extra}
 							payoffChoice = {this.state.payoffChoice}
 							onChange={(evt)=>this.handleExtraPaymentInputChange(evt)}
+							doReinvest = {this.state.doReinvest}
 							/>
 						<LoanControlPanel
 							loan={this.state.loan} 
@@ -174,6 +183,7 @@ class App extends Component {
 							investment = {this.state.investment}
 							extra = {this.state.extra}
 							payoffChoice = {this.state.payoffChoice}	
+							doReinvest = {this.state.doReinvest}
 							/>
 					</div>
 
